@@ -1,0 +1,7 @@
+/target
+/pkg
+Cargo.lock
+*.woff2
+/bench/node_modules/
+/bench/package.json
+/bench/package-lock.json

@@ -1,0 +1,26 @@
+[workspace]
+members = ["xtask"]
+
+[package]
+name = "ttf2woff2-wasm"
+version = "0.10.3"
+edition = "2024"
+description = "WASM bindings for ttf2woff2 - convert TTF fonts to WOFF2 format"
+authors = ["kaoru <k@warpnine.io>"]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/0x6b/ttf2woff2-wasm"
+readme = "README.md"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+ttf2woff2 = { version = "0.10", default-features = false }
+wasm-bindgen = "0.2"
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3"
+
+[profile.release]
+opt-level = "s"
+lto = true
