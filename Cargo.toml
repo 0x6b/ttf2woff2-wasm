@@ -3,7 +3,7 @@ members = ["xtask"]
 
 [package]
 name = "ttf2woff2-wasm"
-version = "0.10.3"
+version = "0.10.4"
 edition = "2024"
 description = "WASM bindings for ttf2woff2 - convert TTF fonts to WOFF2 format"
 authors = ["kaoru <k@warpnine.io>"]
@@ -15,7 +15,7 @@ readme = "README.md"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-ttf2woff2 = { version = "0.10", default-features = false }
+ttf2woff2 = { version = "0.10.4", default-features = false }
 wasm-bindgen = "0.2"
 
 [dev-dependencies]
