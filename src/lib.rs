@@ -17,8 +17,9 @@ pub fn convert(ttf_data: &[u8], quality: Option<u8>) -> Result<Vec<u8>, JsError>
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use wasm_bindgen_test::*;
+
+    use super::*;
 
     #[wasm_bindgen_test]
     fn convert_empty_returns_error() {

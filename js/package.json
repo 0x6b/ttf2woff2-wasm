@@ -4,7 +4,7 @@
     "access": "public"
   },
   "description": "Convert TTF fonts to WOFF2 format (Pure Rust compiled to WASM)",
-  "version": "0.10.4",
+  "version": "0.11.0",
   "license": "MIT OR Apache-2.0",
   "repository": {
     "type": "git",
