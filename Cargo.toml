@@ -3,7 +3,7 @@ members = ["xtask"]
 
 [package]
 name = "ttf2woff2-wasm"
-version = "0.10.4"
+version = "0.11.0"
 edition = "2024"
 description = "WASM bindings for ttf2woff2 - convert TTF fonts to WOFF2 format"
 authors = ["kaoru <k@warpnine.io>"]
