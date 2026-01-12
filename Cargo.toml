@@ -15,7 +15,7 @@ readme = "README.md"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-ttf2woff2 = { version = "0.10.4", default-features = false }
+ttf2woff2 = { version = "0.11.0", default-features = false }
 wasm-bindgen = "0.2"
 
 [dev-dependencies]
