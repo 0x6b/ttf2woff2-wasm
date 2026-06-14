@@ -1,7 +1,6 @@
 use std::{
     env,
     env::args,
-    fs,
     fs::{copy, remove_dir_all},
     path::PathBuf,
     process::{Command, exit},
@@ -80,7 +79,7 @@ fn run(cmd: &str, args: &[&str]) {
 
 fn project_root() -> PathBuf {
     let dir = env!("CARGO_MANIFEST_DIR");
-    std::path::PathBuf::from(dir)
+    PathBuf::from(dir)
         .parent()
         .expect("xtask should be in project root")
         .to_path_buf()
