@@ -30,7 +30,7 @@ package.json:
 
 ```diff
 -"ttf2woff2": "^3.0.0"
-+"@0x6b/ttf2woff2-wasm": "^0.10.3"
++"@0x6b/ttf2woff2-wasm": "^0.13.3"
 ```
 
 Your code:
@@ -50,20 +50,20 @@ Convert TTF font data to WOFF2 format synchronously.
 
 ## Benchmark
 
-Compared with [ttf2woff2](https://www.npmjs.com/package/ttf2woff2) v8.0.0 on Apple M1 Max:
+Compared with [ttf2woff2](https://www.npmjs.com/package/ttf2woff2) v8.0.1 on a 2-vCPU Intel Xeon Linux VM (x86_64):
 
 ### Conversion Performance
 
 ```
 WarpnineSans-Regular.ttf (269.1 KB)
-  native: avg=1331ms  mem=44.8 KB
-  wasm:   avg=500ms  mem=20.6 KB
-  → 2.7x faster, 2.2x less memory
+  native: avg=1533ms  mem=45.8 KB
+  wasm:   avg=595ms  mem=20.3 KB
+  → 2.6x faster, 2.3x less memory
 
 NotoSansJP-Medium.ttf (5.5 MB)
-  native: avg=19039ms  mem=30.0 KB
-  wasm:   avg=9756ms  mem=11.4 KB
-  → 2.0x faster, 2.6x less memory
+  native: avg=22445ms  mem=30.3 KB
+  wasm:   avg=11375ms  mem=11.4 KB
+  → 2.0x faster, 2.7x less memory
 ```
 
 Run locally: `cd bench && npm install ttf2woff2 && node --expose-gc benchmark.cjs`
@@ -72,10 +72,10 @@ Run locally: `cd bench && npm install ttf2woff2 && node --expose-gc benchmark.cj
 
 | Package                | Installed |
 | ---------------------- | --------- |
-| ttf2woff2-wasm v0.13.2 | 968 KB    |
-| ttf2woff2 v8.0.0       | 11 MB     |
+| ttf2woff2-wasm v0.13.3 | 969 KB    |
+| ttf2woff2 v8.0.1       | 6.3 MB    |
 
-11x smaller installed size (no native compilation needed).
+6.7x smaller installed size (no native compilation needed).
 
 ## License
 
