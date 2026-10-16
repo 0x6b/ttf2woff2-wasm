@@ -44,9 +44,21 @@ const woff2 = ttf2woff2(ttfBuffer);
 
 ## API
 
-### `ttf2woff2(input: Buffer | Uint8Array): Buffer`
+### `ttf2woff2(input: Buffer | Uint8Array, options?: { transformGlyfLoca?: boolean }): Buffer`
 
 Convert TTF font data to WOFF2 format synchronously.
+
+### Encoding behavior
+
+The WASM encoder uses Brotli quality 11. By default, `transformGlyfLoca` is `false`: the original `glyf`/`loca` tables are preserved without transformation and are still Brotli-compressed. Disabling transformation avoids glyph reconstruction that can make some fonts incompatible with Chromium and Google's WOFF2 decoder, at the cost of potentially larger output. Existing one-argument calls use this default.
+
+To explicitly enable transformation:
+
+```js
+const woff2 = ttf2woff2(ttf, { transformGlyfLoca: true });
+```
+
+Transformation can reduce output size, but reconstructed glyph offsets can exceed the range of a short `loca` table, causing affected fonts to be rejected by Chromium or Google's decoder. Validate transformed output with your target browsers and decoders before using it.
 
 ## Benchmark
 
