@@ -6,13 +6,13 @@ const ttf2woff2 = require('../pkg/index.js');
 const fixtures = [
   {
     name: 'WarpnineSans-Regular.ttf',
-    expectedSize: 80444,
-    expectedHash: '908b3b850363bb854d0e15235aacc78a01eea0dc9fe36c1dfc1455a9a76b43a2',
+    expectedSize: 89020,
+    expectedHash: 'c8bbfb41170591b5817557c6cb427887fb57f2bea0d268ffac3192e3c71524b7',
   },
   {
     name: 'NotoSansJP-Medium.ttf',
-    expectedSize: 2322440,
-    expectedHash: 'fc468e182077775416b83056f131845f8fa1ba347ea629d7e8973ea8348ea094',
+    expectedSize: 2779880,
+    expectedHash: '9c81190cf79b7dbccf93be1ab84f84fa6bce5469799f65c7000a33e35ae749ec',
   },
 ];
 

@@ -30,7 +30,7 @@ package.json:
 
 ```diff
 -"ttf2woff2": "^3.0.0"
-+"@0x6b/ttf2woff2-wasm": "^0.10.3"
++"@0x6b/ttf2woff2-wasm": "^0.14.0"
 ```
 
 Your code:
