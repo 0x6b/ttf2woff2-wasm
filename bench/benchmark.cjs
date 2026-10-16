@@ -1,4 +1,6 @@
 const { readFileSync } = require('fs');
+const { strict: assert } = require('assert');
+const { arch, cpus, platform } = require('os');
 const { performance } = require('perf_hooks');
 
 const fixtures = [
@@ -8,11 +10,11 @@ const fixtures = [
 
 function formatBytes(bytes) {
   if (bytes < 1024) return bytes + ' B';
-  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-  return (bytes / 1024 / 1024).toFixed(1) + ' MB';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KiB';
+  return (bytes / 1024 / 1024).toFixed(1) + ' MiB';
 }
 
-function benchmark(name, fn, iterations = 10) {
+function benchmark(fn, iterations = 10) {
   // Warm up
   for (let i = 0; i < 3; i++) fn();
 
@@ -20,31 +22,32 @@ function benchmark(name, fn, iterations = 10) {
   if (global.gc) global.gc();
 
   const times = [];
-  const memBefore = process.memoryUsage().heapUsed;
+  let output;
 
   for (let i = 0; i < iterations; i++) {
     const start = performance.now();
-    fn();
+    output = fn();
     times.push(performance.now() - start);
   }
 
-  const memAfter = process.memoryUsage().heapUsed;
-  const memDelta = memAfter - memBefore;
+  assert.ok(Buffer.isBuffer(output));
+  assert.equal(output.subarray(0, 4).toString(), 'wOF2');
 
   const avg = times.reduce((a, b) => a + b, 0) / times.length;
   const min = Math.min(...times);
   const max = Math.max(...times);
 
-  return { name, avg, min, max, memDelta };
+  return { avg, min, max, size: output.length };
 }
 
 // Load implementations
 let original, wasm;
 try {
-  const mod = require('ttf2woff2');
-  original = mod.default || mod;
+  // Load the native addon directly: the package entry point can silently
+  // fall back to its own WASM implementation if native loading fails.
+  original = require('ttf2woff2/build/Release/addon.node').convert;
 } catch {
-  console.log('ttf2woff2 not installed, run: npm install ttf2woff2');
+  console.log('Native addon not available; run: npm install ttf2woff2@8.0.0 and check its native build succeeds');
 }
 
 try {
@@ -55,8 +58,10 @@ try {
 
 if (!original || !wasm) process.exit(1);
 
-console.log('Benchmark: ttf2woff2 (native) vs ttf2woff2-wasm');
-console.log('Run with --expose-gc for accurate memory measurements\n');
+console.log(`Node.js ${process.version}; ${platform()} ${arch()}; ${cpus()[0].model}`);
+console.log(`ttf2woff2 ${require('ttf2woff2/package.json').version} (native addon) vs ttf2woff2-wasm ${require('../pkg/package.json').version}`);
+console.log('3 warm-up conversions, then 10 timed conversions per variant; input read outside timing.');
+console.log('Optional: run with --expose-gc to collect garbage before each timed batch.\n');
 
 for (const path of fixtures) {
   const name = path.split('/').pop();
@@ -65,13 +70,13 @@ for (const path of fixtures) {
   console.log(`${name} (${formatBytes(ttf.length)})`);
   console.log('─'.repeat(60));
 
-  const orig = benchmark('native', () => original(ttf));
-  const wasmRes = benchmark('wasm', () => wasm(ttf));
-
-  const speedup = orig.avg / wasmRes.avg;
-  const memRatio = Math.abs(orig.memDelta) / Math.abs(wasmRes.memDelta);
-
-  console.log(`  native: avg=${orig.avg.toFixed(0)}ms  mem=${formatBytes(Math.abs(orig.memDelta))}`);
-  console.log(`  wasm:   avg=${wasmRes.avg.toFixed(0)}ms  mem=${formatBytes(Math.abs(wasmRes.memDelta))}`);
-  console.log(`  → ${speedup.toFixed(1)}x faster, ${memRatio.toFixed(1)}x less memory\n`);
+  for (const [variant, convert] of [
+    ['native', () => original(ttf)],
+    ['wasm default', () => wasm(ttf)],
+    ['wasm opt-in', () => wasm(ttf, { transformGlyfLoca: true })],
+  ]) {
+    const result = benchmark(convert);
+    console.log(`  ${variant}: avg=${result.avg.toFixed(0)}ms  min=${result.min.toFixed(0)}ms  max=${result.max.toFixed(0)}ms  output=${result.size} bytes`);
+  }
+  console.log();
 }
