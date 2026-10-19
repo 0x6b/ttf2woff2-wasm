@@ -31,6 +31,24 @@ jobs:
           node-version: '24'
           package-manager-cache: false
       - run: cargo install wasm-pack --version 0.15.0 --locked
+      # wasm-pack downloads Binaryen 117, which has a Windows use-after-scope
+      # bug in Precompute (WebAssembly/binaryen#6639), fixed in Binaryen 118.
+      - name: Install Binaryen 118 on Windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $archive = Join-Path $env:RUNNER_TEMP 'binaryen-version_118-x86_64-windows.tar.gz'
+          Invoke-WebRequest 'https://github.com/WebAssembly/binaryen/releases/download/version_118/binaryen-version_118-x86_64-windows.tar.gz' -OutFile $archive
+          $expected = 'ade841d672aaf75b7b2aa3f650b7bc45fb637d4a96cfbf4e07f227ee30d04ab2'
+          if ((Get-FileHash $archive -Algorithm SHA256).Hash.ToLowerInvariant() -ne $expected) {
+            throw 'Binaryen archive checksum mismatch'
+          }
+          tar -xzf $archive -C $env:RUNNER_TEMP
+          if ($LASTEXITCODE -ne 0) { throw 'Binaryen extraction failed' }
+          Join-Path $env:RUNNER_TEMP 'binaryen-version_118/bin' | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
+      - name: Verify Windows optimizer
+        if: runner.os == 'Windows'
+        run: wasm-opt --version
       - run: wasm-pack test --node
       - run: cargo xtask test
       - run: npm pack --dry-run ./pkg
