@@ -1,6 +1,6 @@
 # ttf2woff2-wasm
 
-Convert TTF fonts to WOFF2 format. WASM build of [0x6b/ttf2woff2](https://github.com/0x6b/ttf2woff2).
+Convert TTF and OTF (CFF-flavored OpenType) fonts to WOFF2 format. WASM build of [0x6b/ttf2woff2](https://github.com/0x6b/ttf2woff2).
 
 Drop-in replacement for [nfroidure/ttf2woff2](https://www.npmjs.com/package/ttf2woff2) with zero native dependencies.
 
@@ -24,13 +24,21 @@ const woff2 = ttf2woff2(ttf);
 fs.writeFileSync("font.woff2", woff2);
 ```
 
+OTF/CFF input is supported starting with v0.14.1, using the same API:
+
+```js
+const otf = fs.readFileSync("font.otf");
+const woff2 = ttf2woff2(otf);
+fs.writeFileSync("font.woff2", woff2);
+```
+
 ## Migration from nfroidure/ttf2woff2
 
 package.json:
 
 ```diff
 -"ttf2woff2": "^3.0.0"
-+"@0x6b/ttf2woff2-wasm": "^0.14.0"
++"@0x6b/ttf2woff2-wasm": "^0.14.1"
 ```
 
 Your code:
@@ -46,9 +54,11 @@ const woff2 = ttf2woff2(ttfBuffer);
 
 ### `ttf2woff2(input: Buffer | Uint8Array, options?: { transformGlyfLoca?: boolean }): Buffer`
 
-Convert TTF font data to WOFF2 format synchronously.
+Convert TTF or OTF/CFF font data to WOFF2 format synchronously.
 
 ### Encoding behavior
+
+For OTF/CFF input, CFF tables are preserved without transformation and only Brotli-compressed: the WOFF2 specification defines no CFF transformation. The `transformGlyfLoca` option has no effect on these fonts.
 
 The WASM encoder uses Brotli quality 11. By default, `transformGlyfLoca` is `false`: the original `glyf`/`loca` tables are preserved without transformation and are still Brotli-compressed. Disabling transformation avoids glyph reconstruction that can make some fonts incompatible with Chromium and Google's WOFF2 decoder, at the cost of potentially larger output. Existing one-argument calls use this default.
 
