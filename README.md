@@ -109,6 +109,22 @@ $ node --expose-gc benchmark.cjs
 
 Sizes are the npm tarball contents after unpacking, excluding dependencies and generated native build artifacts, not total installation disk usage. The WASM size is from the local release build (`npm pack --dry-run --json ./pkg`); the native package size is from npm metadata (`npm view ttf2woff2@8.0.0 dist.unpackedSize`). The WASM package requires no native compilation.
 
+## CI and releases
+
+Pull requests run WASM unit tests and Node.js package tests on Linux, macOS, and Windows with Node.js 24, plus Clippy and Rust formatting checks. CI can also be run manually from the Actions tab.
+
+Releases use [npm Trusted Publishing](https://docs.npmjs.com/trusted-publishers/) (OIDC), without a stored npm token. Before the first release, configure the trusted publisher for `@0x6b/ttf2woff2-wasm` on npmjs.com:
+
+- Organization or user: `0x6b`
+- Repository: `ttf2woff2-wasm`
+- Workflow filename: `release.yml`
+- Environment name: `release`
+- Allow direct publishing with `npm publish`.
+
+Configure the GitHub `release` environment with any required approval or tag restrictions. npm requires a new trusted publisher to complete its first successful publish within two days of configuration, so set it up close to the first release.
+
+To release, update `Cargo.toml` and `js/package.json` to the same stable version, merge the tested changes, then push the corresponding `vX.Y.Z` tag. The release workflow rejects mismatched versions and prerelease tags, reruns WASM and Node.js tests, and publishes the built `pkg/` directory to npm as `latest`. It does not create a GitHub Release or publish to crates.io.
+
 ## License
 
 - The [Noto Sans Japanese](https://fonts.google.com/noto/specimen/Noto+Sans+JP) font in [tests/fixtures/](tests/fixtures) is licensed under [OFL](https://fonts.google.com/noto/specimen/Noto+Sans+JP/license).

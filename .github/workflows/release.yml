@@ -1,0 +1,56 @@
+name: Publish to npm
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Verify release version
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import re
+          import tomllib
+          from pathlib import Path
+
+          cargo_version = tomllib.loads(Path("Cargo.toml").read_text())["package"]["version"]
+          npm_version = json.loads(Path("js/package.json").read_text())["version"]
+          tag = os.environ["RELEASE_TAG"]
+          if not re.fullmatch(r"v[0-9]+\.[0-9]+\.[0-9]+", tag):
+              raise SystemExit("Expected a stable release tag: vX.Y.Z")
+          if tag != f"v{cargo_version}" or cargo_version != npm_version:
+              raise SystemExit(f"Version mismatch: tag={tag}, Cargo={cargo_version}, npm={npm_version}")
+          print(f"Release version verified: {tag}")
+          PY
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24'
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+      - run: npm install --global npm@11
+      - run: cargo install wasm-pack --version 0.15.0 --locked
+      - run: wasm-pack test --node
+      - run: cargo xtask test
+      - run: npm publish --access public
+        working-directory: pkg
