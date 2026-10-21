@@ -1,6 +1,6 @@
 # ttf2woff2-wasm
 
-Convert TTF fonts to WOFF2 format. WASM build of [0x6b/ttf2woff2](https://github.com/0x6b/ttf2woff2).
+Convert TTF and OTF (CFF-flavored OpenType) fonts to WOFF2 format. WASM build of [0x6b/ttf2woff2](https://github.com/0x6b/ttf2woff2).
 
 Drop-in replacement for [nfroidure/ttf2woff2](https://www.npmjs.com/package/ttf2woff2) with zero native dependencies.
 
@@ -24,13 +24,21 @@ const woff2 = ttf2woff2(ttf);
 fs.writeFileSync("font.woff2", woff2);
 ```
 
+OTF/CFF input is supported starting with v0.14.1, using the same API:
+
+```js
+const otf = fs.readFileSync("font.otf");
+const woff2 = ttf2woff2(otf);
+fs.writeFileSync("font.woff2", woff2);
+```
+
 ## Migration from nfroidure/ttf2woff2
 
 package.json:
 
 ```diff
 -"ttf2woff2": "^3.0.0"
-+"@0x6b/ttf2woff2-wasm": "^0.14.0"
++"@0x6b/ttf2woff2-wasm": "^0.14.1"
 ```
 
 Your code:
@@ -46,9 +54,11 @@ const woff2 = ttf2woff2(ttfBuffer);
 
 ### `ttf2woff2(input: Buffer | Uint8Array, options?: { transformGlyfLoca?: boolean }): Buffer`
 
-Convert TTF font data to WOFF2 format synchronously.
+Convert TTF or OTF/CFF font data to WOFF2 format synchronously.
 
 ### Encoding behavior
+
+For OTF/CFF input, CFF tables are preserved without transformation and only Brotli-compressed: the WOFF2 specification defines no CFF transformation. The `transformGlyfLoca` option has no effect on these fonts.
 
 The WASM encoder uses Brotli quality 11. By default, `transformGlyfLoca` is `false`: the original `glyf`/`loca` tables are preserved without transformation and are still Brotli-compressed. Disabling transformation avoids glyph reconstruction that can make some fonts incompatible with Chromium and Google's WOFF2 decoder, at the cost of potentially larger output. Existing one-argument calls use this default.
 
@@ -98,6 +108,22 @@ $ node --expose-gc benchmark.cjs
 | ttf2woff2 v8.0.0         | ≈4.20 MiB        |
 
 Sizes are the npm tarball contents after unpacking, excluding dependencies and generated native build artifacts, not total installation disk usage. The WASM size is from the local release build (`npm pack --dry-run --json ./pkg`); the native package size is from npm metadata (`npm view ttf2woff2@8.0.0 dist.unpackedSize`). The WASM package requires no native compilation.
+
+## CI and releases
+
+Pull requests run WASM unit tests and Node.js package tests on Linux, macOS, and Windows with Node.js 24, plus Clippy and Rust formatting checks. CI can also be run manually from the Actions tab.
+
+Releases use [npm Trusted Publishing](https://docs.npmjs.com/trusted-publishers/) (OIDC), without a stored npm token. Before the first release, configure the trusted publisher for `@0x6b/ttf2woff2-wasm` on npmjs.com:
+
+- Organization or user: `0x6b`
+- Repository: `ttf2woff2-wasm`
+- Workflow filename: `release.yml`
+- Environment name: `release`
+- Allow direct publishing with `npm publish`.
+
+Configure the GitHub `release` environment with any required approval or tag restrictions. npm requires a new trusted publisher to complete its first successful publish within two days of configuration, so set it up close to the first release.
+
+To release, update `Cargo.toml` and `js/package.json` to the same stable version, merge the tested changes, then push the corresponding `vX.Y.Z` tag. The release workflow rejects mismatched versions and prerelease tags, reruns WASM and Node.js tests, and publishes the built `pkg/` directory to npm as `latest`. It does not create a GitHub Release or publish to crates.io.
 
 ## License
 

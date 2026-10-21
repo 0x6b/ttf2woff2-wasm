@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    name: Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+          - windows-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - run: cargo install wasm-pack --version 0.15.0 --locked
+      # wasm-pack downloads Binaryen 117, which has a Windows use-after-scope
+      # bug in Precompute (WebAssembly/binaryen#6639), fixed in Binaryen 118.
+      - name: Install Binaryen 118 on Windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $archive = Join-Path $env:RUNNER_TEMP 'binaryen-version_118-x86_64-windows.tar.gz'
+          Invoke-WebRequest 'https://github.com/WebAssembly/binaryen/releases/download/version_118/binaryen-version_118-x86_64-windows.tar.gz' -OutFile $archive
+          $expected = 'ade841d672aaf75b7b2aa3f650b7bc45fb637d4a96cfbf4e07f227ee30d04ab2'
+          if ((Get-FileHash $archive -Algorithm SHA256).Hash.ToLowerInvariant() -ne $expected) {
+            throw 'Binaryen archive checksum mismatch'
+          }
+          tar -xzf $archive -C $env:RUNNER_TEMP
+          if ($LASTEXITCODE -ne 0) { throw 'Binaryen extraction failed' }
+          Join-Path $env:RUNNER_TEMP 'binaryen-version_118/bin' | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
+      - name: Verify Windows optimizer
+        if: runner.os == 'Windows'
+        run: wasm-opt --version
+      - run: wasm-pack test --node
+      - run: cargo xtask test
+      - run: npm pack --dry-run ./pkg
+
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+        with:
+          components: clippy
+      - run: cargo clippy --workspace --all-targets -- -D warnings
+
+  fmt:
+    name: Format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+        with:
+          components: rustfmt
+      - run: cargo fmt --all --check
